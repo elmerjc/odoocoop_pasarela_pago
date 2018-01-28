@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 import pprint
-import werkzeug
-import urllib2
 
-from openerp import http, SUPERUSER_ID
-from openerp.addons.web.http import request
-from openerp.addons.payment.models.payment_acquirer import ValidationError
+import requests
+import werkzeug
+from werkzeug import urls
+
+from odoo import http
+from odoo.addons.payment.models.payment_acquirer import ValidationError
+from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 
@@ -21,7 +24,7 @@ class WebpayController(http.Controller):
         reference, txn_id = data.get('item_number'), data.get('txn_id')
         if not reference or not txn_id:
             error_msg = _('Paypal: received data with missing reference (%s) or txn_id (%s)') % (reference, txn_id)
-            _logger.info(error_msg)
+            _logger.warning(error_msg)
             raise ValidationError(error_msg)
 
         # find tx -> @TDENOTE use txn_id ?
@@ -32,7 +35,7 @@ class WebpayController(http.Controller):
                 error_msg += '; no order found'
             else:
                 error_msg += '; multiple order found'
-            _logger.info(error_msg)
+            _logger.warning(error_msg)
             raise ValidationError(error_msg)
         return self.browse(cr, uid, tx_ids[0], context=context)
 
@@ -47,12 +50,12 @@ class WebpayController(http.Controller):
             res.update(state='done', date_validate=data.get('payment_date', fields.datetime.now()))
             return tx.write(res)
         elif status in ['Pending', 'Expired']:
-            _logger.info('Received notification for Paypal payment %s: set as pending' % (tx.reference))
+            _logger.warning('Received notification for Paypal payment %s: set as pending' % (tx.reference))
             res.update(state='pending', state_message=data.get('pending_reason', ''))
             return tx.write(res)
         else:
             error = 'Received unrecognized status for Paypal payment %s: %s, set as error' % (tx.reference, status)
-            _logger.info(error)
+            _logger.warning(error)
             res.update(state='error', state_message=error)
             return tx.write(res)
 
