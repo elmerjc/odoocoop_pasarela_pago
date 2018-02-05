@@ -78,7 +78,7 @@ class KhipuController(http.Controller):
     def redirect_khipu(self, **post):
         acquirer_id = int(post.get('acquirer_id'))
         acquirer = request.env['payment.acquirer'].browse(acquirer_id)
-        result =  acquirer.initTransaction(post)
+        result =  acquirer.khipu_initTransaction(post)
         _logger.warning("reditect%s" %result)
         uopen = pool.request('GET', result['url'])
         resp = uopen.data

@@ -8,14 +8,13 @@
             <field name="inherit_id" ref="payment.acquirer_form"/>
             <field name="arch" type="xml">
               <xpath expr='//group[@name="acquirer"]' position='after'>
-                <group>
+                <group attrs="{'invisible': [('provider', '!=', 'khipu')]}">
                   <field name="khipu_receiver_id" />
                 </group>
-                  <group attrs="{'invisible': [('provider', '!=', 'khipu')]}">
-                      <field name="khipu_private_key"/>
-                      <a colspan="2" href="http://odoocoop.cl/khipu/test-account-creation" target="_blank">How to configure your Khipu account?</a>
-                  </group>
-
+                <group attrs="{'invisible': [('provider', '!=', 'khipu')]}">
+                    <field name="khipu_private_key"/>
+                    <a colspan="2" href="http://odoocoop.cl/khipu/test-account-creation" target="_blank">How to configure your Khipu account?</a>
+                </group>
               </xpath>
             </field>
         </record>

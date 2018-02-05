@@ -26,7 +26,6 @@ class PaymentAcquirerKhipu(models.Model):
         )
     khipu_receiver_id = fields.Char(
             string="Id del Cobrador",
-            required=True,
         )
     khipu_private_key = fields.Char(
             string="LLave",
@@ -54,7 +53,7 @@ class PaymentAcquirerKhipu(models.Model):
     def khipu_form_generate_values(self, values):
         _logger.warning("set")
         _logger.warning(values)
-        banks = self.get_banks()
+        banks = self.khipu_get_banks()
         _logger.warning("banks %s" %banks)
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         d = datetime.now() + timedelta(hours=1)
@@ -78,18 +77,18 @@ class PaymentAcquirerKhipu(models.Model):
     def khipu_get_form_action_url(self):
         return self._get_khipu_urls(self.environment)['khipu_form_url']
 
-    def get_client(self,):
+    def khipu_get_client(self,):
         return Khipu(
                 self.khipu_receiver_id,
                 self.khipu_private_key,
             )
 
-    def get_banks(self):
-        client = self.get_client()
+    def khipu_get_banks(self):
+        client = self.khipu_get_client()
         return client.service('ReceiverBanks')
 
-    def initTransaction(self, post):
-        client = self.get_client()
+    def khipu_initTransaction(self, post):
+        client = self.khipu_get_client()
         return client.service('CreatePaymentURL', **post)
 
 
