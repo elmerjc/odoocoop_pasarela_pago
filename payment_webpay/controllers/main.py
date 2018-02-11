@@ -13,6 +13,10 @@ from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 
+try:
+    import urllib.request as urllib2
+except:
+    _logger.warning('No se puede cargar urllib2')
 
 class WebpayController(http.Controller):
     _accept_url = '/payment/webpay/test/accept'
@@ -66,8 +70,10 @@ class WebpayController(http.Controller):
     def webpay_form_feedback(self, acquirer_id=None, **post):
         """ Webpay contacts using GET, at least for accept """
         _logger.info('Webpay: entering form_feedback with post data %s', pprint.pformat(post))  # debug
-        cr, uid, context = request.cr, SUPERUSER_ID, request.context
-        resp = request.registry['payment.transaction'].getTransaction(cr, uid, [], acquirer_id, post['token_ws'], context=context)
+        try:
+            resp = request.env['payment.transaction'].getTransaction(acquirer_id, post['token_ws'])
+        except:
+            raise UserError('Ha ocurrido un error al obtener la transacción desde Webpay')
         '''
             TSY: Autenticación exitosa
             TSN: Autenticación fallida.
@@ -76,15 +82,15 @@ class WebpayController(http.Controller):
             U3: Error interno en la autenticación.
             Puede ser vacío si la transacción no se autenticó.
         '''
-        request.registry['payment.transaction'].form_feedback(cr, uid, resp, 'webpay', context=context)
-        urequest = urllib2.Request(resp.urlRedirection, werkzeug.url_encode({'token_ws': post['token_ws'], }))
+        request.env['payment.transaction'].sudo().form_feedback( resp, 'webpay')
+        urequest = urllib2.Request(resp.urlRedirection, werkzeug.url_encode({'token_ws': post['token_ws'], }).encode())
         uopen = urllib2.urlopen(urequest)
         feedback = uopen.read()
         if resp.VCI in ['TSY'] and str(resp.detailOutput[0].responseCode) in [ '0' ]:
             values={
                 'webpay_redirect': feedback,
             }
-            return request.website.render('payment_webpay.webpay_redirect', values)
+            return request.render('payment_webpay.webpay_redirect', values)
         return werkzeug.utils.redirect('/shop/payment')
 
 
@@ -95,7 +101,6 @@ class WebpayController(http.Controller):
     def final(self, **post):
         """ Webpay contacts using GET, at least for accept """
         _logger.info('Webpay: entering End with post data %s', pprint.pformat(post))  # debug
-        cr, uid, context = request.cr, SUPERUSER_ID, request.context
         return werkzeug.utils.redirect('/shop/payment/validate')
 
 
@@ -131,10 +136,10 @@ class WebpayController(http.Controller):
         acquirer_id = int(post.get('acquirer_id'))
         acquirer = request.env['payment.acquirer'].browse(acquirer_id)
         result =  acquirer.initTransaction(post)
-        urequest = urllib2.Request(result['url'], werkzeug.url_encode({'token_ws': result['token']}))
+        urequest = urllib2.Request(result['url'], werkzeug.url_encode({'token_ws': result['token']}).encode())
         uopen = urllib2.urlopen(urequest)
         resp = uopen.read()
         values={
             'webpay_redirect': resp,
         }
-        return request.website.render('payment_webpay.webpay_redirect', values)
+        return request.render('payment_webpay.webpay_redirect', values)
