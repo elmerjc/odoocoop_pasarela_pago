@@ -6,13 +6,14 @@
     'author': 'Daniel Santibáñez Polanco',
     'summary': 'Payment Acquirer: Khipu Implementation',
     'website': 'https://globalresponse.cl',
-    'version': "11.1.0.0",
+    'version': "1.0.0",
     'description': """Khipu Payment Acquirer""",
     'depends': ['payment'],
     'external_dependencies': {
             'python':[
                 #'khipu',
-        ],
+                'urllib3',
+            ],
     },
     'data': [
         'views/khipu.xml',
