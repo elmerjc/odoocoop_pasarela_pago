@@ -13,7 +13,7 @@ from odoo.tools.translate import _
 _logger = logging.getLogger(__name__)
 
 try:
-    from .khipu import Khipu
+    from .pykhipu.client import Client
 except:
     _logger.warning("No se puede cargar Khipu")
 
@@ -51,24 +51,25 @@ class PaymentAcquirerKhipu(models.Model):
 
     @api.multi
     def khipu_form_generate_values(self, values):
-        _logger.warning("set")
-        _logger.warning(values)
-        banks = self.khipu_get_banks()
-        _logger.warning("banks %s" %banks)
+        #banks = self.khipu_get_banks()#@TODO mostrar listados de bancos
+        #_logger.warning("banks %s" %banks)
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         d = datetime.now() + timedelta(hours=1)
         values.update({
+            'acquirer_id': self.id,
             'business': self.company_id.name,
+            'item_number': values['reference'],
+            'currency': values['currency'].name,
             'subject': '%s: %s' % (self.company_id.name, values['reference']),
             'body': values['reference'],
             'amount': values['amount'],
             'payer_email': values['partner_email'],
-            'banks': banks,
+            #'banks': banks,
             'expires_date': time.mktime(d.timetuple()) ,
             'custom': values.get('custom', 'No Custom Data'),
             'notify_url': base_url + '/payment/khipu/notify',
-            'return_url': base_url + '/payment/khipu/return_url',
-            'cancel_url': base_url + '/payment/khipu/cancel_url',
+            'return_url': base_url + '/payment/khipu/return',
+            'cancel_url': base_url + '/payment/khipu/cancel',
             'picture_url': base_url + '/web/image/res.company/%s/logo' % values.get('company_id', self.env.user.company_id.id),
         })
         return values
@@ -78,18 +79,31 @@ class PaymentAcquirerKhipu(models.Model):
         return self._get_khipu_urls(self.environment)['khipu_form_url']
 
     def khipu_get_client(self,):
-        return Khipu(
+        return Client(
                 self.khipu_receiver_id,
                 self.khipu_private_key,
             )
 
     def khipu_get_banks(self):
         client = self.khipu_get_client()
-        return client.service('ReceiverBanks')
+        return client.banks.get()
 
     def khipu_initTransaction(self, post):
+        tx = self.env['payment.transaction'].search([('reference','=', post.get('transaction_id'))])
+        del(post['acquirer_id'])
+        del(post['expires_date']) #Fix Formato que solicita Khipu
+        post['return_url'] += '/%s' % str(tx.id)
+        post['notify_url'] += '/%s' % str(self.id)
+        post['cancel_url'] += '/%s' % str(self.id)
         client = self.khipu_get_client()
-        return client.service('CreatePaymentURL', **post)
+        res = client.payments.post(post)
+        if hasattr(res, 'payment_url'):
+            tx.write({'state': 'pending'})
+        return res
+
+    def khipu_getTransaction(self, data):
+        client = self.khipu_get_client()
+        return client.payments.get(data['notification_token'])
 
 
 class PaymentTxKhipu(models.Model):
@@ -97,7 +111,7 @@ class PaymentTxKhipu(models.Model):
 
     @api.model
     def _khipu_form_get_tx_from_data(self, data):
-        reference, txn_id = data.get('item_number'), data.get('txn_id')
+        reference, txn_id = data.transaction_id, data.payment_id
         if not reference or not txn_id:
             error_msg = _('Khipu: received data with missing reference (%s) or txn_id (%s)') % (reference, txn_id)
             _logger.info(error_msg)
@@ -128,21 +142,20 @@ class PaymentTxKhipu(models.Model):
                 '-7' : 'Excede límite diario por transacción.',
                 '-8' : 'Rubro no autorizado.',
             }
-        status = data.get('payment_status')
+        status = data.status
         res = {
-            'acquirer_reference': data.get('txn_id'),
-            'paypal_txn_type': data.get('payment_type'),
+            'acquirer_reference': data.payment_id,
         }
-        if status in ['0']:
-            _logger.info('Validated khipu payment for tx %s: set as done' % (tx.reference))
-            res.update(state='done', date_validate=data.transactionDate)
-            return tx.write(res)
+        if status in ['done']:
+            _logger.info('Validated khipu payment for tx %s: set as done' % (self.reference))
+            res.update(state='done', date_validate=datetime.now())
+            return self.write(res)
         elif status in ['-6', '-7']:
-            _logger.warning('Received notification for khipu payment %s: set as pending' % (tx.reference))
+            _logger.warning('Received notification for khipu payment %s: set as pending' % (self.reference))
             res.update(state='pending', state_message=data.get('pending_reason', ''))
-            return tx.write(res)
+            return self.write(res)
         else:
-            error = 'Received unrecognized status for khipu payment %s: %s, set as error' % (tx.reference, codes[status].decode('utf-8'))
+            error = 'Received unrecognized status for khipu payment %s: %s, set as error' % (self.reference, codes[status].decode('utf-8'))
             _logger.warning(error)
             res.update(state='error', state_message=error)
-            return tx.write(res)
+            return self.write(res)
