@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="acquirer_form_flow" model="ir.ui.view">
+            <field name="name">acquirer.form.flow</field>
+            <field name="model">payment.acquirer</field>
+            <field name="inherit_id" ref="payment.acquirer_form"/>
+            <field name="arch" type="xml">
+              <xpath expr='//group[@name="acquirer"]' position='after'>
+                <group attrs="{'invisible': [('provider', '!=', 'flow')]}">
+                  <field name="flow_api_key" />
+                </group>
+                <group attrs="{'invisible': [('provider', '!=', 'flow')]}">
+                    <field name="flow_private_key"/>
+                    <field name="flow_payment_method"/>
+                    <a colspan="2" href="http://odoocoop.cl/helpdesk/" target="_blank">How to configure your Flow account?</a>
+                </group>
+              </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="flow_acquirer_button">
+          <div>
+              <input type="hidden" name="data_set" t-att-data-action-url="tx_url" data-remove-me=""/>
+              <input type="hidden" name="transaction_id" t-att-value="commerceOrder"/>
+              <input type="hidden" name="subject" t-att-value="subject"/>
+              <input type="hidden" name="amount" t-att-value="amount"/>
+              <input type="hidden" name="currency" t-att-value="currency.name"/>
+              <input type="hidden" name="commerceOrder" t-att-value="commerceOrder"/>
+              <input t-if="handling" type="hidden" name="handling"
+                  t-att-value="handling"/>
+              <!-- partner / address data -->
+              <input type="hidden" name="email" t-att-value="email"/>
+              <input type="hidden" name="paymentMethod" t-att-value="paymentMethod"/>
+              <!-- after payment parameters -->
+              <input t-if='custom' type='hidden' name="custom"
+                  t-att-value='custom'/>
+              <input type="hidden" name="acquirer_id" t-att-value="acquirer_id"/>
+          </div>
+        </template>
+
+        <template id="flow_redirect" name="flow_redirect">
+          <t t-raw="flow_redirect" />
+        </template>
+
+    </data>
+</odoo>
