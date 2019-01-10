@@ -6,6 +6,7 @@ from odoo.tools import float_round, DEFAULT_SERVER_DATE_FORMAT
 from odoo.tools.float_utils import float_compare, float_repr
 from odoo.tools.safe_eval import safe_eval
 from odoo.tools.translate import _
+from odoo.addons.payment.models.payment_acquirer import ValidationError
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -51,13 +52,13 @@ class PaymentAcquirerFlow(models.Model):
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         if environment == 'prod':
             return {
-                'flow_form_url': base_url +'/payment/flow/redirect',
+                'flow_form_url': base_url + '/payment/flow/redirect',
                 'flow_url': "https://www.flow.cl/api",
             }
         else:
             return {
-                'flow_form_url': base_url +'/payment/flow/redirect',
-                'flow_url': "http://flow.tuxpan.com/api",
+                'flow_form_url': base_url + '/payment/flow/redirect',
+                'flow_url': "https://sandbox.flow.cl/api",
             }
 
     @api.multi
@@ -95,6 +96,8 @@ class PaymentAcquirerFlow(models.Model):
         tx = self.env['payment.transaction'].search([('reference', '=', post.get('transaction_id'))])
         del(post['acquirer_id'])
         del(post['transaction_id'])
+        if float(post.get('amount')) < 350:
+            raise ValidationError("Monto total no debe ser menor a $350")
         post.update({
                     'paymentMethod': int(post.get('paymentMethod')),
                     'urlConfirmation': base_url + '/payment/flow/notify/%s' % str(self.id),
@@ -152,6 +155,8 @@ class PaymentTxFlow(models.Model):
         status = data.status
         res = {
             'acquirer_reference': data.payment_id,
+            'payment_token_id': data.token,
+            'fees': data.token.paymentData['fee'],
         }
         if status in [2]:
             _logger.info('Validated flow payment for tx %s: set as done' % (self.reference))

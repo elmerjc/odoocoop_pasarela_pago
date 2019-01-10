@@ -207,7 +207,8 @@ class Client(object):
         if(not is_numeric(monto)):
             self.flow_log("Error: El parámetro monto de la orden debe ser numérico","new_order")
             raise UserError("El monto de la orden debe ser numérico")
-
+        if monto < 350:
+            raise 'El Monto Mínimo es de $350'
         self.order["OrdenNumero"] = orden_compra
         self.order["Concepto"] = concepto
         self.order["Monto"] = monto
