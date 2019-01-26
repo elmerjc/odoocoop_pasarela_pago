@@ -7,7 +7,8 @@
             <field name="inherit_id" ref="payment.transaction_form"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='acquirer_reference']" position="after">
-                  <field name="flow_txn_type" />
+                    <field name="flow_token" attrs="{'invisible': [('provider', '=', 'flow')]}"/>
+                  <!--<field name="flow_txn_type" />-->
                 </xpath>
             </field>
         </record>

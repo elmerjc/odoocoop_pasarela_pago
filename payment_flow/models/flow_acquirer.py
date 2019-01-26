@@ -118,6 +118,9 @@ class PaymentAcquirerFlow(models.Model):
 class PaymentTxFlow(models.Model):
     _inherit = 'payment.transaction'
 
+    flow_token = fields.Char(
+        string="Flow Token Transaction",
+    )
     @api.model
     def _flow_form_get_tx_from_data(self, data):
         return self
@@ -155,8 +158,8 @@ class PaymentTxFlow(models.Model):
         status = data.status
         res = {
             'acquirer_reference': data.payment_id,
-            'payment_token_id': data.token,
-            'fees': data.token.paymentData['fee'],
+            'flow_token': data.token,
+            'fees': data.payment_data['fee'],
         }
         if status in [2]:
             _logger.info('Validated flow payment for tx %s: set as done' % (self.reference))
