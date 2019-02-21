@@ -45,7 +45,7 @@ class FlowController(http.Controller):
         _logger.warning("post %s, pay %s" %(post, payment_tx))
         tx_data = payment_tx.acquirer_id.flow_getTransaction(post)
         tx_data._token = post['token']
-        payment_tx.form_feedback(tx_data, 'flow')
+        payment_tx.sudo().form_feedback(tx_data, 'flow')
         return werkzeug.utils.redirect('/shop/confirmation')
 
     @http.route([

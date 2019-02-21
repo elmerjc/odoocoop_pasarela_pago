@@ -6,7 +6,7 @@
     'author': 'Daniel Santibáñez Polanco',
     'summary': 'Payment Acquirer: Flow Implementation',
     'website': 'https://globalresponse.cl',
-    'version': "0.5.2",
+    'version': "0.5.3",
     'description': """Flow Payment Acquirer""",
     'depends': ['payment'],
     'external_dependencies': {
