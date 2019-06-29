@@ -43,6 +43,8 @@ class FlowController(http.Controller):
     ], type='http', auth='public', csrf=False, website=True)
     def flow_form_feedback(self, payment_tx=None, **post):
         _logger.warning("post %s, pay %s" %(post, payment_tx))
+        if not payment_tx:
+            return
         tx_data = payment_tx.acquirer_id.flow_getTransaction(post)
         tx_data._token = post['token']
         payment_tx.sudo().form_feedback(tx_data, 'flow')

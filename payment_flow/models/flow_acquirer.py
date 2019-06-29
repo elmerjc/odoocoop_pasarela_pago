@@ -47,6 +47,28 @@ class PaymentAcquirerFlow(models.Model):
         res['fees'].append('flow')
         return res
 
+    @api.multi
+    def flow_compute_fees(self, amount, currency_id, country_id):
+        """ Compute paypal fees.
+
+            :param float amount: the amount to pay
+            :param integer country_id: an ID of a res.country, or None. This is
+                                       the customer's country, to be compared to
+                                       the acquirer company country.
+            :return float fees: computed fees
+        """
+        if not self.fees_active:
+            return 0.0
+        country = self.env['res.country'].browse(country_id)
+        if country and self.company_id.country_id.id == country.id:
+            percentage = self.fees_dom_var
+            fixed = self.fees_dom_fixed
+        else:
+            percentage = self.fees_int_var
+            fixed = self.fees_int_fixed
+        fees = (percentage / 100.0 * amount + fixed) / (1 - percentage / 100.0)
+        return fees
+
     @api.model
     def _get_flow_urls(self, environment):
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')

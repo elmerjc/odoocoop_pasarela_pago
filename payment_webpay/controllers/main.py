@@ -2,7 +2,7 @@
 import logging
 import pprint
 import werkzeug
-from odoo import http
+from odoo import http, fields
 from odoo.addons.payment.models.payment_acquirer import ValidationError
 from odoo.http import request
 from odoo.exceptions import UserError
