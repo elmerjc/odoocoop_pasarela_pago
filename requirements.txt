@@ -1,0 +1,4 @@
+suds-jurko
+xmlsec
+wsse
+urllib3
