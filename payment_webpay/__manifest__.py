@@ -10,7 +10,7 @@
     'description': """Webpay Payment Acquirer""",
     'depends': [
                 'payment',
-                'sale_payment',
+                'website_sale',
             ],
         'external_dependencies': {
             'python':[
