@@ -185,14 +185,13 @@ class PaymentTxFlow(models.Model):
         }
         if status in [2]:
             _logger.info('Validated flow payment for tx %s: set as done' % (self.reference))
-            res.update(state='done', date_validate=datetime.now())
+            self._set_transaction_done()
             return self.write(res)
         elif status in [1, '-7']:
             _logger.warning('Received notification for flow payment %s: set as pending' % (self.reference))
-            res.update(state='pending', state_message=data.get('pending_reason', ''))
+            self._set_transaction_pending()
             return self.write(res)
         else: #3 y 4
             error = 'Received unrecognized status for flow payment %s: %s, set as error' % (self.reference, codes[status].decode('utf-8'))
             _logger.warning(error)
-            res.update(state='error', state_message=error)
             return self.write(res)
